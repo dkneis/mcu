@@ -1,0 +1,12 @@
+Package: mcu
+Type: Package
+Title: Model calibration utilities
+Version: 0.1
+Date: 2015-07-01
+Author: David Kneis <david.kneis@tu-dresden.de>
+Maintainer: David Kneis <david.kneis@tu-dresden.de>
+Description: Utilities to aid in the calibration of models, especially those
+  with many parameters and significant computation times.
+License: GPL (>= 2)
+Imports: lhs
+
