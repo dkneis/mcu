@@ -7,7 +7,7 @@
 #'   a named numeric vector of parameters. It must return a named numeric vector
 #'   (which can be of length 1).
 #' @param p Data frame specifying ranges and defaults for the varied parameters.
-#'   There must be three columns: 'name', 'default', 'min', and 'max'.
+#'   There must be four columns: 'name', 'default', 'min', and 'max'.
 #' @param nRuns Desired number of parameter samples. The total number of
 #'   evaluations of \code{fn} is \code{nRuns} + 1.
 #' @param silent If \code{TRUE}, diagnostic messages are suppressed.
