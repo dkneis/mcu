@@ -92,6 +92,8 @@ sens= function(fn, p, sort=TRUE, silent=TRUE, ...) {
       " expecting '",paste(required,collapse="', '"),"'"))
   if (any(p$max < p$min))
     stop("parameter ranges not reasonable")
+  if (any(p$default <= p$min) || any(p$default >= p$max))
+    stop("parameter defaults must be > minimum and < maximum")
 
   # base run: all parameters at default values
   if (!silent)
