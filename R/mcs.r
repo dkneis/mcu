@@ -92,7 +92,7 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, ...) {
   }
 
   # Add default parameters to table of parameters
-  prand= rbind(as.list(setNames(p$default, p$name)), prand)
+  prand= rbind(as.data.frame(as.list(setNames(p$default, p$name))), prand)
 
   # Return tested parameter values and function results
   return(list(p=prand, out=out))

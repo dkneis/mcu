@@ -19,7 +19,7 @@ and \eqn{fdef} denote the output of the objective function for a test value
 and the default value of a parameter, respectively. Reasonable values are
 probably between 0.8 and 0.95.}
 
-\item{xpars}{Logical. Controls the layout of plot. If \code{TRUE}, the
+\item{xpars}{Logical. Controls the plot's layout. If \code{TRUE}, the
   parameter names appear as column headers and the objective function(s) as
   row headers(s). If \code{FALSE}, the result matrix is transposed.}
 }
