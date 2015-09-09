@@ -69,16 +69,22 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, ...) {
   # Simulation with defaults to initialize result table
   if (!silent)
     print(paste0("initial run with defaults"))
+  t0= Sys.time()
   tmp= fn(setNames(p$default,p$name),...)
   if (is.null(names(tmp)) || (any(names(tmp) == "")))
     stop("'fn' does not return a named vector")
   out= data.frame(matrix(tmp, nrow=1))
   names(out)= names(tmp)
+  t1= Sys.time()
+  tTotal= nRuns * as.numeric(difftime(t1, t0, units="secs"))
+  tElapsed= 0
 
   # Simulations
   for (i in 1:nRuns) {
     if (!silent)
-      print(paste0("run ",i," of ",nRuns," (",(i-1)/nRuns*100,"% completed)"))
+      print(paste0("run ",i," of ",nRuns,", ",(i-1)/nRuns*100,"% done, approx. ",
+        round(tTotal-tElapsed,1)," sec. left"))
+    t0= Sys.time()
     tryCatch({
       tmp= fn(setNames(unlist(prand[i,]),names(prand)),...)
       out= rbind(out,tmp)
@@ -89,6 +95,9 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, ...) {
       print(w)
       out= rbind(out,rep(NA, ncol(out)))
     })
+    t1= Sys.time()
+    tElapsed= tElapsed + as.numeric(difftime(t1, t0, units="secs"))
+    tTotal= nRuns * tElapsed / i
   }
 
   # Add default parameters to table of parameters
