@@ -13,13 +13,20 @@
 #' @param silent If \code{TRUE}, diagnostic messages are suppressed.
 #' @param ... Additional arguments passed to function \code{fn}.
 #'
-#' @return A list of two elements \code{p} and \code{out}, both being data
+#' @return A list of 3 elements. Elements \code{p} and \code{out} are both data
 #'   frames with \code{nRuns} + 1 rows. \code{p} holds the tested parameter values
 #'   with column names taken from the 'name' field of \code{ranges}.
 #'   \code{out} holds the return values of \code{fn}. Each row in \code{out}
 #'   corresponds to the same row of \code{p}. In the common case where \code{fn}
 #'   returns a scalar result, \code{out} contains just a single column.
 #'   The first row in both data frames corresponds to the default parameter set.
+#'   The third list element, \code{cpu} is a vector of length \code{nRuns},
+#'   holding the times spent on the evaluation of \code{fn}.
+#'
+#' @note If \code{fn} generated an error (or a warning) when called with a
+#'   parameter set, the corresponding row in the result data frame \code{out}.
+#'   is set to \code{NA}. The same is true for the corresponding element of
+#'   the returned vector \code{cpu}.
 #'
 #' @author David Kneis \email{david.kneis@@tu-dresden.de}
 #'
@@ -66,6 +73,8 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, ...) {
     prand[,i]= p[i,"min"] + prand[,i] * (p[i,"max"] - p[i,"min"])
   }
 
+  cpu= rep(NA, nRuns + 1)
+
   # Simulation with defaults to initialize result table
   if (!silent)
     print(paste0("initial run with defaults"))
@@ -78,6 +87,7 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, ...) {
   t1= Sys.time()
   tTotal= nRuns * as.numeric(difftime(t1, t0, units="secs"))
   tElapsed= 0
+  cpu[1]= as.numeric(difftime(t1, t0, units="secs"))
 
   # Simulations
   for (i in 1:nRuns) {
@@ -85,9 +95,11 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, ...) {
       print(paste0("run ",i," of ",nRuns,", ",(i-1)/nRuns*100,"% done, approx. ",
         round(tTotal-tElapsed,1)," sec. left"))
     t0= Sys.time()
+    ok= FALSE
     tryCatch({
       tmp= fn(setNames(unlist(prand[i,]),names(prand)),...)
       out= rbind(out,tmp)
+      ok= TRUE
     }, error= function(e) {
       print(e)
       out= rbind(out,rep(NA, ncol(out)))
@@ -96,6 +108,8 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, ...) {
       out= rbind(out,rep(NA, ncol(out)))
     })
     t1= Sys.time()
+    if (ok)
+      cpu[i+1]= as.numeric(difftime(t1, t0, units="secs"))
     tElapsed= tElapsed + as.numeric(difftime(t1, t0, units="secs"))
     tTotal= nRuns * tElapsed / i
   }
@@ -104,6 +118,6 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, ...) {
   prand= rbind(as.data.frame(as.list(setNames(p$default, p$name))), prand)
 
   # Return tested parameter values and function results
-  return(list(p=prand, out=out))
+  return(list(p=prand, out=out, cpu=cpu))
 }
 

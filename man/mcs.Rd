@@ -22,17 +22,25 @@ evaluations of \code{fn} is \code{nRuns} + 1.}
 \item{...}{Additional arguments passed to function \code{fn}.}
 }
 \value{
-A list of two elements \code{p} and \code{out}, both being data
+A list of 3 elements. Elements \code{p} and \code{out} are both data
   frames with \code{nRuns} + 1 rows. \code{p} holds the tested parameter values
   with column names taken from the 'name' field of \code{ranges}.
   \code{out} holds the return values of \code{fn}. Each row in \code{out}
   corresponds to the same row of \code{p}. In the common case where \code{fn}
   returns a scalar result, \code{out} contains just a single column.
   The first row in both data frames corresponds to the default parameter set.
+  The third list element, \code{cpu} is a vector of length \code{nRuns},
+  holding the times spent on the evaluation of \code{fn}.
 }
 \description{
 Performs a Monte-Carlo simulation with parameters sampled from a uniform
 distribution using a latin hypercube method.
+}
+\note{
+If \code{fn} generated an error (or a warning) when called with a
+  parameter set, the corresponding row in the result data frame \code{out}.
+  is set to \code{NA}. The same is true for the corresponding element of
+  the returned vector \code{cpu}.
 }
 \examples{
 # Analysis of the residuals' sum of squares for a linear model
