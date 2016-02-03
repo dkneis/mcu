@@ -20,7 +20,7 @@
 #'   corresponds to the same row of \code{p}. In the common case where \code{fn}
 #'   returns a scalar result, \code{out} contains just a single column.
 #'   The first row in both data frames corresponds to the default parameter set.
-#'   The third list element, \code{cpu} is a vector of length \code{nRuns},
+#'   The third list element, \code{cpu} is a vector of length \code{nRuns} + 1,
 #'   holding the times spent on the evaluation of \code{fn}.
 #'
 #' @note If \code{fn} generated an error (or a warning) when called with a
