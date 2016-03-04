@@ -18,3 +18,15 @@ if (!("lhs" %in% installed.packages()[,1]))
   install.packages("lhs")
 library("lhs")
 
+# Packages for parallel execution
+#' @import foreach
+if (!("foreach" %in% installed.packages()[,1]))
+  install.packages("foreach")
+library("foreach")
+
+# Packages for parallel execution
+#' @import doParallel
+if (!("doParallel" %in% installed.packages()[,1]))
+  install.packages("doParallel")
+library("doParallel")
+

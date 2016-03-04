@@ -8,5 +8,5 @@ Maintainer: David Kneis <david.kneis@tu-dresden.de>
 Description: Utilities to aid in the calibration of models, especially those
   with many parameters and significant computation times.
 License: GPL (>= 2)
-Imports: lhs
+Imports: lhs, doParallel, foreach
 

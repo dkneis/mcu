@@ -4,7 +4,7 @@
 \alias{mcs}
 \title{Monte-Carlo simulation}
 \usage{
-mcs(fn, p, nRuns = 10, silent = TRUE, ...)
+mcs(fn, p, nRuns = 10, silent = TRUE, parallel = FALSE, ...)
 }
 \arguments{
 \item{fn}{Function of interest. It must accept as its first argument
@@ -18,6 +18,10 @@ There must be four columns: 'name', 'default', 'min', and 'max'.}
 evaluations of \code{fn} is \code{nRuns} + 1.}
 
 \item{silent}{If \code{TRUE}, diagnostic messages are suppressed.}
+
+\item{parallel}{If \code{TRUE}, parameter sets are processed in parallel if
+  supported by the machine. The number of threads is controlled automatically
+  (by calling \code{registerDoParallel()} with no arguments).}
 
 \item{...}{Additional arguments passed to function \code{fn}.}
 }

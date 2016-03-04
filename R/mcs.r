@@ -11,6 +11,10 @@
 #' @param nRuns Desired number of parameter samples. The total number of
 #'   evaluations of \code{fn} is \code{nRuns} + 1.
 #' @param silent If \code{TRUE}, diagnostic messages are suppressed.
+#' @param parallel If \code{TRUE}, parameter sets are processed in parallel if
+#'   supported by the machine. The number of threads is controlled automatically
+#'   (by calling \code{registerDoParallel()} with no arguments).
+#'   
 #' @param ... Additional arguments passed to function \code{fn}.
 #'
 #' @return A list of 3 elements. Elements \code{p} and \code{out} are matrices
@@ -49,7 +53,7 @@
 #' plot(x$p[,"intercept"], x$out[,"sse"], xlab="intercept", ylab="SSE")
 #' layout(matrix(1))
 
-mcs= function(fn, p, nRuns=10, silent=TRUE, ...) {
+mcs= function(fn, p, nRuns=10, silent=TRUE, parallel=FALSE, ...) {
 
   # Check inputs
   if (!is.function(fn))
@@ -66,53 +70,66 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, ...) {
   # Sample parameters
   if (!silent)
     print("creating sample")
-  prand= improvedLHS(n=nRuns, k=nrow(p))
+  prand= lhs::improvedLHS(n=nRuns, k=nrow(p))
   colnames(prand)= p$name
   for (i in 1:nrow(p)) {
     prand[,i]= p[i,"min"] + prand[,i] * (p[i,"max"] - p[i,"min"])
   }
 
-  cpu= rep(NA, nRuns + 1)
-
   # Simulation with defaults to initialize result table
   if (!silent)
     print(paste0("initial run with defaults"))
   t0= Sys.time()
-  tmp= fn(setNames(p$default,p$name),...)
-  if (!is.numeric(tmp) || is.null(names(tmp)) || (any(names(tmp) == "")))
+  def= fn(setNames(p$default,p$name),...)
+  if (!is.numeric(def) || is.null(names(def)) || (any(names(def) == "")))
     stop("'fn' does not return a named numeric vector")
-  out= matrix(NA, ncol=length(tmp), nrow=nRuns+1)
-  colnames(out)= names(tmp)
-  out[1,]= tmp
   t1= Sys.time()
-  tTotal= nRuns * as.numeric(difftime(t1, t0, units="secs"))
-  tElapsed= 0
-  cpu[1]= as.numeric(difftime(t1, t0, units="secs"))
-
-  # Simulations
-  for (i in 1:nRuns) {
-    if (!silent)
-      print(paste0("run ",i," of ",nRuns,", ",(i-1)/nRuns*100,"% done, approx. ",
-        round(tTotal-tElapsed,1)," sec. left"))
-    t0= Sys.time()
-    ok= FALSE
-    tryCatch({
-      tmp= fn(setNames(prand[i,],colnames(prand)),...)
-      out[i+1,]= tmp
-      ok= TRUE
-    }, error= function(e) {
-      print(e)
-      out[i+1,]= rep(NA, ncol(out))
-    }, warning= function(w) {
-      print(w)
-      out[i+1,]= rep(NA, ncol(out))
-    })
-    t1= Sys.time()
-    if (ok)
-      cpu[i+1]= as.numeric(difftime(t1, t0, units="secs"))
-    tElapsed= tElapsed + as.numeric(difftime(t1, t0, units="secs"))
-    tTotal= nRuns * tElapsed / i
+  cpu= as.numeric(difftime(t1, t0, units="secs"))
+  tTotal= nRuns * cpu
+  if (!silent) {
+    hours= tTotal %/% 3600
+    minutes= (tTotal - hours*3600) %/% 60
+    seconds= round(tTotal - hours*3600 - minutes*60)
+    print(paste0("current time is ",Sys.time()))
+    print(paste0("finish at about ",Sys.time() + tTotal," if in serial mode"))
+    print(paste0("next ",nRuns," runs will take about ",hours," hr ",
+      minutes," min ",seconds," sec in serial mode"))
+    print(paste0("parallel processing enabled: ",ifelse(parallel,"yes","no")))
   }
+
+  if (parallel)
+    doParallel::registerDoParallel()
+
+  # Function to process a single set
+  f= function(i) {
+    tryCatch({
+      t0= Sys.time()
+      tmp= fn(setNames(prand[i,],colnames(prand)),...)
+      t1= Sys.time()
+      res= c(tmp, as.numeric(difftime(t1, t0, units="secs")))
+    }, error= function(e) {
+      if (!silent) print(e)
+      res= rep(NA, ncol(def) + 1)
+    }, warning= function(w) {
+      if (!silent) print(w)
+      res= rep(NA, ncol(def) + 1)
+    })
+    return(res)
+  }
+
+  # Process all sets
+  if (parallel) {
+    tmp= foreach::foreach(i=1:nRuns, .combine=c) %dopar% f(i)
+  } else {
+    tmp= foreach::foreach(i=1:nRuns, .combine=c) %do% f(i)
+  }
+  
+  # Collect results
+  tmp= c(c(def, cpu), tmp)                            # add default set
+  tmp= matrix(tmp, nrow=nRuns+1, byrow=TRUE)          # transform
+  out= matrix(tmp[,1:(ncol(tmp)-1)], nrow=nrow(tmp))  # need to use matrix here (to handle single column case)
+  colnames(out)= names(def)
+  cpu= tmp[, ncol(tmp)]
 
   # Add default parameters to table of parameters
   prand= rbind(p$default, prand)
@@ -120,4 +137,22 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, ...) {
   # Return tested parameter values and function results
   return(list(p=prand, out=out, cpu=cpu))
 }
+
+#library(lhs)
+#library(doParallel)
+
+# obs= data.frame(x=c(1,2), y=c(1,2))
+# model= function(p, x) { p["slope"] * x + p["intercept"] }
+# objfun= function(p, obs) { c(sse= sum((obs$y - model(p, obs$x))^2)) }
+# p= data.frame(
+#   name=c("slope","intercept"),
+#   default= c(1, 0),
+#   min= c(0.5, -1),
+#   max= c(2, 1)
+# )
+# x= mcs(fn=objfun, p=p, obs=obs, parallel=TRUE)
+# layout(matrix(1:2, ncol=2))
+# plot(x$p[,"slope"], x$out[,"sse"], xlab="slope", ylab="SSE")
+# plot(x$p[,"intercept"], x$out[,"sse"], xlab="intercept", ylab="SSE")
+# layout(matrix(1))
 
