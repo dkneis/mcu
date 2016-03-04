@@ -22,14 +22,14 @@ evaluations of \code{fn} is \code{nRuns} + 1.}
 \item{...}{Additional arguments passed to function \code{fn}.}
 }
 \value{
-A list of 3 elements. Elements \code{p} and \code{out} are both data
-  frames with \code{nRuns} + 1 rows. \code{p} holds the tested parameter values
+A list of 3 elements. Elements \code{p} and \code{out} are matrices
+  with \code{nRuns} + 1 rows. \code{p} holds the tested parameter values
   with column names taken from the 'name' field of \code{ranges}.
   \code{out} holds the return values of \code{fn}. Each row in \code{out}
   corresponds to the same row of \code{p}. In the common case where \code{fn}
   returns a scalar result, \code{out} contains just a single column.
   The first row in both data frames corresponds to the default parameter set.
-  The third list element, \code{cpu} is a vector of length \code{nRuns},
+  The third list element, \code{cpu} is a vector of length \code{nRuns} + 1,
   holding the times spent on the evaluation of \code{fn}.
 }
 \description{
@@ -38,7 +38,7 @@ distribution using a latin hypercube method.
 }
 \note{
 If \code{fn} generated an error (or a warning) when called with a
-  parameter set, the corresponding row in the result data frame \code{out}.
+  parameter set, the corresponding row in the result matrix \code{out}.
   is set to \code{NA}. The same is true for the corresponding element of
   the returned vector \code{cpu}.
 }
@@ -55,8 +55,8 @@ p= data.frame(
 )
 x= mcs(fn=objfun, p=p, obs=obs)
 layout(matrix(1:2, ncol=2))
-plot(x$p[,"slope"], x$out$sse, xlab="slope", ylab="SSE")
-plot(x$p[,"intercept"], x$out$sse, xlab="intercept", ylab="SSE")
+plot(x$p[,"slope"], x$out[,"sse"], xlab="slope", ylab="SSE")
+plot(x$p[,"intercept"], x$out[,"sse"], xlab="intercept", ylab="SSE")
 layout(matrix(1))
 }
 \author{
