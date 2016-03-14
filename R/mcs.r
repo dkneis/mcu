@@ -85,16 +85,12 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, parallel=FALSE, ...) {
     stop("'fn' does not return a named numeric vector")
   t1= Sys.time()
   cpu= as.numeric(difftime(t1, t0, units="secs"))
-  tTotal= nRuns * cpu
-  if (!silent) {
-    hours= tTotal %/% 3600
-    minutes= (tTotal - hours*3600) %/% 60
-    seconds= round(tTotal - hours*3600 - minutes*60)
-    print(paste0("current time is ",Sys.time()))
-    print(paste0("finish at about ",Sys.time() + tTotal," if in serial mode"))
-    print(paste0("next ",nRuns," runs will take about ",hours," hr ",
-      minutes," min ",seconds," sec in serial mode"))
-    print(paste0("parallel processing enabled: ",ifelse(parallel,"yes","no")))
+
+  readableTimeSpan= function (seconds) {
+    h= seconds %/% 3600
+    m= (seconds - h*3600) %/% 60
+    s= round(seconds - h*3600 - m*60)
+    return(paste0(h," hrs ",m," min ",s," sec"))
   }
 
   if (parallel)
@@ -102,17 +98,24 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, parallel=FALSE, ...) {
 
   # Function to process a single set
   f= function(i) {
+    if (!silent) {
+      elapsed= as.numeric(difftime(Sys.time(), t0, units="secs"))
+      remain= elapsed / i * (nrow(prand) + 1) - elapsed
+      print(paste0("set ",i," of ",nrow(prand),"; about ",
+        readableTimeSpan(remain)," remain"))
+    }
+    res= rep(NA, length(def) + 1)
     tryCatch({
       t0= Sys.time()
       tmp= fn(setNames(prand[i,],colnames(prand)),...)
       t1= Sys.time()
       res= c(tmp, as.numeric(difftime(t1, t0, units="secs")))
     }, error= function(e) {
-      if (!silent) print(e)
-      res= rep(NA, ncol(def) + 1)
+      if (!silent)
+        print(e)
     }, warning= function(w) {
-      if (!silent) print(w)
-      res= rep(NA, ncol(def) + 1)
+      if (!silent)
+        print(w)
     })
     return(res)
   }
