@@ -64,9 +64,10 @@ mcs= function(fn, p, nRuns=10, silent=TRUE, parallel=FALSE, ...) {
   if (is.null(names(p)) || (!all(required %in% colnames(p))))
     stop(paste0("missing column names in data frame 'p',",
       " expecting '",paste(required,collapse="', '"),"'"))
-  if (any(p$max < p$min))
-    stop("parameter ranges not reasonable")
-
+  bad= which(p$max < p$min)
+  if (length(bad) > 0)
+    stop("ranges not reasonable for parameter(s) '",
+      paste(names(p)[bad], collapse="', '"),"'")
   # Sample parameters
   if (!silent)
     print("creating sample")
